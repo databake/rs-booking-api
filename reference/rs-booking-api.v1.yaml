@@ -1,0 +1,526 @@
+openapi: 3.0.0
+tags:
+  - name: booking
+    description: everything about booking
+  - name: available slots
+    description: everything about availability of slots to book
+info:
+  title: Booking
+  version: '1.0'
+  description: Use this API to do stuff.
+  contact:
+    name: Aydan Anderson
+    email: aydan.anderson@rsconnect.com
+  termsOfService: 'https://www.rsconnect.com/contract_terms'
+servers:
+  - url: 'http://localhost:3000'
+    description: Base
+paths:
+  /getavailableslots:
+    post:
+      summary: getAvailableSlots
+      tags: []
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Credentials:
+              schema:
+                type: boolean
+                enum:
+                  - 'true'
+                  - 'false'
+                default: 'true'
+              required: true
+            Access-Control-Allow-Origin:
+              schema:
+                type: string
+              required: true
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 21
+                minItems: 0
+                items:
+                  type: object
+                  properties:
+                    weekday:
+                      type: string
+                      enum:
+                        - Monday
+                        - Tuesday
+                        - Wednesday
+                        - Thursday
+                        - Friday
+                        - Saturday
+                        - Sunday
+                      example: Saturday
+                    dateAvailable:
+                      type: string
+                      format: date
+                      example: '2020-02-26'
+                      minLength: 10
+                      maxLength: 10
+                    engineersAvailable:
+                      type: string
+                      example: '"2"'
+                      minLength: 1
+                      maxLength: 3
+                      description: The number of engineers currently available to execute this job.
+                  required:
+                    - weekday
+                    - dateAvailable
+                    - engineersAvailable
+              examples:
+                Three available slots:
+                  value:
+                    - weekday: Tuesday
+                      dateAvailable: '2020-02-25'
+                      engineersAvailable: '2'
+                    - weekday: Wednesday
+                      dateAvailable: '2020-02-26'
+                      engineersAvailable: '1'
+                    - weekday: Thursday
+                      dateAvailable: '2020-02-27'
+                      engineersAvailable: '3'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '500':
+          description: Internal Server Error
+      operationId: post_getavailableslots
+      description: 'Given a job type, postcode, voucher, date and customer number, return an array of available dates.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              minProperties: 5
+              maxProperties: 5
+              properties:
+                dateFrom:
+                  type: string
+                  description: The earliest date this job should be executed.
+                  format: date
+                  example: '2020-02-25'
+                  minLength: 10
+                  maxLength: 10
+                voucher:
+                  type: string
+                  format: uuid
+                postcode:
+                  type: string
+                  pattern: '([A-Za-z][A-Ha-hJ-Yj-y]?[0-9][A-Za-z0-9]? ?[0-9][A-Za-z]{2}|[Gg][Ii][Rr] ?0[Aa]{2})'
+                customerNumber:
+                  type: string
+                jobType:
+                  type: string
+                  enum:
+                    - INST
+                    - REM
+                    - COV
+                  example: INST
+                  minLength: 3
+                  maxLength: 4
+              required:
+                - dateFrom
+                - voucher
+                - postcode
+                - customerNumber
+                - jobType
+        description: ''
+      parameters: []
+      security:
+        - x-api-key: []
+    parameters: []
+  /createjob:
+    post:
+      description: "Creates a job on RS Connect's system to be processed. If the start_date is in the future the job will be queued for retrieval and processing on the start_date."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateJob'
+            examples:
+              example-1: {}
+        required: true
+        description: ''
+      responses:
+        '201':
+          description: 201 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateJobResponse'
+        '401':
+          description: 401 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 403 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict
+        '500':
+          description: 500 response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags: []
+      summary: Create Job
+      operationId: post_createjob
+    parameters: []
+  /bookjob:
+    post:
+      summary: ''
+      operationId: post-bookjob
+      responses:
+        '200':
+          description: OK
+      description: Use this enpoint to book a job.
+      security:
+        - x-api-key: []
+      tags:
+        - booking
+components:
+  schemas:
+    ErrorResponse:
+      title: ErrorResponse
+      type: object
+      properties:
+        id:
+          type: string
+    CreateJob:
+      type: object
+      additionalProperties: false
+      minProperties: 24
+      maxProperties: 24
+      description: The model used for creating a job
+      title: ''
+      x-examples:
+        request body example:
+          accountId: 1033
+          accountSecret: '!3tm31Npl3a53'
+          name: Reginald Molehouse
+          address1: 10 Acacia Avenue
+          address2: Trendy Estate
+          town: Royal Leamington Spa
+          county: Warwickshire
+          postcode: CV10 7LX
+          mob: 7690456321
+          tel: 2476730999
+          email: user@example.com
+          make: Range Rover
+          model: Sport HSE
+          vrn: HY08 EYP
+          vin: 1FMCU14T6JU400773
+          jobType: INST
+          confirmedDate: '2020-03-01'
+          voucher: 0217c5be-bb0e-45ed-a519-b12f97990986
+          instructions: 5 wire fu fu valve rotary management on glass
+      properties:
+        accountId:
+          type: number
+          description: The unique contract identifier. This value is assigned by RS Connect upon contract.
+          example: 1028
+          minimum: 1000
+          maximum: 9999
+        accountSecret:
+          type: string
+          description: 'Contract secret, required to access web services assigned when the contract is accepted'
+          example: myverysecretpassword
+        jobType:
+          type: string
+          default: INST
+          description: The code representing the type of job that will be executed by RS Connect
+          enum:
+            - INST
+            - COV
+            - DEINST
+          example: INST
+          minLength: 3
+          maxLength: 6
+        voucher:
+          type: string
+          description: The companies Job Id for updating and retrieving data from RS Connect systems
+          example: my-unique-voucher-identifier
+          minLength: 10
+        timestamp:
+          type: string
+          description: The date and time this request was made. If it is too far away from now() it will be rejected.
+          format: date-time
+          example: '2021-06-01T18:43:00Z'
+          pattern: '^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])(.[0-9]+)?(Z)?$'
+        confirmedDate:
+          type: string
+          default: todays date
+          description: 'Start date for the policy, ensures the SLA begins from this point in time'
+          format: date
+          example: '2021-09-13'
+          pattern: "([12]\\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01]))"
+        instructions:
+          type: string
+          description: Instructions to act as guidance to RS Connect staff
+          example: Please install this in a very good place.
+          maxLength: 1024
+        name:
+          type: string
+          description: The name of the policy holder
+          example: Policy Holder
+          minLength: 2
+          maxLength: 40
+        email:
+          type: string
+          description: The email address of the policy holder
+          format: email
+        mob:
+          type: string
+          description: Mobile Number of policy holder. Must represent a correctly composed UK Mobile Number. One of either mob or tel is required.
+          example: +44 7590 532804
+          pattern: "^(\\+44\\s?7\\d{3}|\\(?07\\d{3}\\)?)\\s?\\d{3}\\s?\\d{3}$"
+        tel:
+          type: string
+          description: Alternate contact number of the policy holder. One of either mob or tel is required.
+          example: +44 1675 624000
+          pattern: "^(((\\+44\\s?\\d{4}|\\(?0\\d{4}\\)?)\\s?\\d{3}\\s?\\d{3})|((\\+44\\s?\\d{3}|\\(?0\\d{3}\\)?)\\s?\\d{3}\\s?\\d{4})|((\\+44\\s?\\d{2}|\\(?0\\d{2}\\)?)\\s?\\d{4}\\s?\\d{4}))(\\s?\\#(\\d{4}|\\d{3}))?$"
+        vrn:
+          type: string
+          description: The Vehicle Registration Number of the vehicle to execute the job on.
+          example: HY06 EYH
+          pattern: "(^[A-Z]{2}[0-9]{2}\\s?[A-Z]{3}$)|(^[A-Z][0-9]{1,3}[A-Z]{3}$)|(^[A-Z]{3}[0-9]{1,3}[A-Z]$)|(^[0-9]{1,4}[A-Z]{1,2}$)|(^[0-9]{1,3}[A-Z]{1,3}$)|(^[A-Z]{1,2}[0-9]{1,4}$)|(^[A-Z]{1,3}[0-9]{1,3}$)|(^[A-Z]{1,3}[0-9]{1,4}$)|(^[0-9]{3}[DX]{1}[0-9]{3}$)"
+        vin:
+          type: string
+          description: The Vehicle Identification Number of the vehcile to execute the job on.
+          example: WAUZZZ8E06A123456
+          pattern: "^[A-HJ-NPR-Z\\d]{8}[\\dX][A-HJ-NPR-Z\\d]{2}\\d{6}$"
+        make:
+          type: string
+          description: The vehicle make that the job will be on
+          enum:
+            - Alfa Romeo
+            - Aston Martin
+            - Audi
+            - Bentley
+            - Benz
+            - BMW
+            - Bugatti
+            - Cadillac
+            - Chevrolet
+            - Chrysler
+            - Citroen
+            - Corvette
+            - DAF
+            - Dacia
+            - Daewoo
+            - Daihatsu
+            - Datsun
+            - De Lorean
+            - Dino
+            - Dodge
+            - Farboud
+            - Ferrari
+            - Fiat
+            - Ford
+            - Honda
+            - Hummer
+            - Hyundai
+            - Infiniti
+            - Isuzu
+            - Jaguar
+            - Jeep
+            - KIA
+            - Koenigsegg
+            - Lada
+            - Lamborghini
+            - Lancia
+            - Land Rover
+            - Lexus
+            - Ligier
+            - Lincoln
+            - Lotus
+            - Martini
+            - Maserati
+            - Maybach
+            - Mazda
+            - McLaren
+            - Mercedes
+            - Mercedes-Benz
+            - Mini
+            - Mitsubishi
+            - Nissan
+            - Noble
+            - Opel
+            - Peugeot
+            - Pontiac
+            - Porsche
+            - Renault
+            - Rolls-Royce
+            - Rover
+            - Saab
+            - Seat
+            - Skoda
+            - Smart
+            - Spyker
+            - Subaru
+            - Suzuki
+            - Toyota
+            - Vauxhall
+            - Volkswagen
+            - Volvo
+            - MG
+            - Rover
+          example: Range Rover
+        model:
+          type: string
+          description: The vehicle model that the job will be on
+        address1:
+          type: string
+          description: The first line of the address where the job will take place
+        address2:
+          type: string
+          description: The second line of the address where the job will take place
+        town:
+          type: string
+          description: The town/city where the job will take place
+        postcode:
+          example: CV11 6FF
+          pattern: '(GIR ?0AA|[A-PR-UWYZ]([0-9]{1,2}|([A-HK-Y][0-9]([0-9ABEHMNPRV-Y])?)|[0-9][A-HJKPS-UW]) ?[0-9][ABD-HJLNP-UW-Z]{2})'
+          type: string
+          description: The postcode where the job will take place
+        county:
+          type: string
+          description: The county where the job will take place
+          enum:
+            - Bedfordshire
+            - Buckinghamshire
+            - Cambridgeshire
+            - Cheshire
+            - Cleveland
+            - Cornwall
+            - Cumbria
+            - Derbyshire
+            - Devon
+            - Dorset
+            - Durham
+            - East Sussex
+            - Essex
+            - Gloucestershire
+            - Greater London
+            - Greater Manchester
+            - Hampshire
+            - Hertfordshire
+            - Kent
+            - Lancashire
+            - Leicestershire
+            - Lincolnshire
+            - Merseyside
+            - Norfolk
+            - North Yorkshire
+            - Northamptonshire
+            - Northumberland
+            - Nottinghamshire
+            - Oxfordshire
+            - Shropshire
+            - Somerset
+            - South Yorkshire
+            - England
+            - Staffordshire
+            - Suffolk
+            - Surrey
+            - Tyne and Wear
+            - Warwickshire
+            - West Berkshire
+            - West Midlands
+            - West Sussex
+            - West Yorkshire
+            - Wiltshire
+            - Worcestershire
+            - Flintshire
+            - Glamorgan
+            - Merionethshire
+            - Monmouthshire
+            - Montgomeryshire
+            - Pembrokeshire
+            - Radnorshire
+            - Anglesey
+            - Breconshire
+            - Caernarvonshire
+            - Cardiganshire
+            - Carmarthenshire
+            - Denbighshire
+            - Aberdeen City
+            - Aberdeenshire
+            - Angus
+            - Argyll and Bute
+            - City of Edinburgh
+            - Clackmannanshire
+            - Dumfries and Galloway
+            - Dundee City
+            - East Ayrshire
+            - East Dunbartonshire
+            - East Lothian
+            - East Renfrewshire
+            - Eilean Siar
+            - Falkirk
+            - Fife
+            - Glasgow City
+            - Highland
+            - Inverclyde
+            - Midlothian
+            - Moray
+            - North Ayrshire
+            - North Lanarkshire
+            - Orkney Islands
+            - Perth and Kinross
+            - Renfrewshire
+            - Scottish Borders
+            - Shetland Islands
+            - South Ayrshire
+            - South Lanarkshire
+            - Stirling
+            - West Dunbartonshire
+            - West Lothian
+            - Antrim
+            - Armagh
+            - Down
+            - Fermanagh
+            - Derry and Londonderry
+            - Tyrone
+          example: Cornwall
+      required:
+        - accountId
+        - accountSecret
+        - jobType
+        - voucher
+        - timestamp
+        - name
+        - mob
+        - vrn
+        - make
+        - model
+        - address1
+        - postcode
+    CreateJobResponse:
+      title: CreateJobResponse
+      type: object
+      properties:
+        id:
+          type: string
+  securitySchemes:
+    x-api-key:
+      name: x-api-key
+      type: apiKey
+      in: header
